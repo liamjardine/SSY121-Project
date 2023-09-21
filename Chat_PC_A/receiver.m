@@ -89,10 +89,10 @@ function audioTimerFcn(recObj, event, handles)
     [max_correlation, max_index] = max(abs(preamble_corr));
 
     delay = max_index %+1 - fsfd*(length(preamble)+1);
-    %The convolution with the entire preamble adds an offset of half the PA, so
+    % The convolution with the entire preamble adds an offset of the length of the PA, so
     % the max, which is the midpoint of the PA is offsetted by half its length,
     % thus resulting in a start of data in index (midpoint + conv offset)
-    data_start_index = delay + 1
+    data_start_index = delay + fsfd
     data_indices = data_start_index:fsfd:(data_start_index + (N_symbols - 1) * fsfd)
     phase_shift = mod(angle(preamble_corr(ind)) * 180 / pi, 360);
 
