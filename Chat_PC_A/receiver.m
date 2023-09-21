@@ -13,8 +13,7 @@
 %%
 
 function [audio_recorder] = receiver(fc)
-fc = 3000;
-fs = 5000; %sampling frequency
+fs = 25000; %sampling frequency
 audio_recorder = audiorecorder(fs,24,1);% create the recorder
 
 %attach callback function
@@ -27,6 +26,7 @@ audio_recorder.UserData.pack  = []; %allocate for data package
 audio_recorder.UserData.pwr_spect = []; %allocate for PSD
 audio_recorder.UserData.const = []; %allocate for constellation
 audio_recorder.UserData.eyed  = []; %allocate for eye diagram
+audio_recorder.UserData.fc = fc;
 
 
 record(audio_recorder); %start recording
@@ -57,24 +57,57 @@ function audioTimerFcn(recObj, event, handles)
 %-----------------------------------------------------------
 disp('Callback triggered')
 
-fs = 5000;                                              % sampling frequency
+f_sample = recObj.SampleRate;
+Tsample = 1/f_sample;
+
+preamble = [1 2 2 2 3 3 0 0 0]; %TODO: change
+roll_off = 0.5;
+span = 6
+
+f_carrier = recObj.UserData.fc;
 N = 432;                                                % number of bits
 const = [(1 + 1i) (1 - 1i) (-1 -1i) (-1 + 1i)]/sqrt(2); % Constellation 1 - QPSK/4-QAM
 M = length(const);                                      % Number of symbols in the constellation
 bpsymb = log2(M);                                       % Number of bits per symbol
-Rs = 500;                                               % Symbol rate [symb/s]
-Ts = 1/Rs;                                              % Symbol time [s/symb]
-fsfd = fs/Rs;                                           % Number of samples per symbol (choose fs such that fsfd is an integer) [samples/symb]
+
+R_symb = 500;                                               % Symbol rate [symb/s]
+T_symb = 1/R_symb;                                              % Symbol time [s/symb]
+fsfd = f_sample/R_symb;                                           % Number of samples per symbol (choose fs such that fsfd is an integer) [samples/symb]
+
 bits = randsrc(1,N,[0 1]);                              % Information bits
 m_buffer = buffer(bits, bpsymb)';                       % Group bits into bits per symbol
 m = bi2de(m_buffer, 'left-msb')'+1;                     % Bits to symbol index
 x = const(m);                                           % Look up symbols using the indices
-x = awgn(x,15);                                          % add artificial noise
+x = awgn(x,15);                                         % add artificial noise
 x_upsample = upsample(x, fsfd);                         % Space the symbols fsfd apart, to enable pulse shaping using conv.
-span = 6;                                               % Set span = 6
-t_vec = -span*Ts: 1/fs :span*Ts;                        % create time vector for one sinc pulse
-pulse = sinc(t_vec/Ts);                                 % create sinc pulse with span = 6
+t_vec = -span*T_symb: 1/f_sample :span*T_symb;                        % create time vector for one sinc pulse
+pulse = sinc(t_vec/T_symb);                                 % create sinc pulse with span = 6
 pulse_train = conv(pulse,x_upsample);                   % make pulse train
+
+
+
+rec_data = getaudiodata(recObj);
+rec_data_downConv = rec_data * exp(-1i*2*pi*f_carrier*(0:length(recdata)-1)*Tsample);
+rec_data_lowpass = lowpass(rec_data_downConv, f_carrier, f_sample);     % Trim LPF if we have noise problems
+
+
+preamble_upsample = upsample(const(preamble), fsfd);
+[pulse, t] = rtrcpuls(roll_off, T_symb, f_sample, span);
+preamble_pulsetrain = conv(preamble_upsample, pulse)
+preamble_corr = conv(rec_data_lowpass, fliplr(conj(preamble_pulsetrain)));
+
+[max_correlation, max_index] = max(abs(preamble_corr));
+
+delay = max_index + 1 - fsfd*(length(preamble)+1);
+phase_shift = mod(angle(preamble_corr(ind))*180/pi,360);
+
+% TODO: create choice logic and noise floor rejection^^
+
+matched_filter = fliplr(conj(pulse));
+
+
+
+
 
 
 %------------------------------------------------------------------------------
@@ -94,9 +127,9 @@ recObj.UserData.eyed.fsfd = fsfd;
 
 % Step 4: Compute the PSD and save it. 
 % !!!! NOTE !!!! the PSD should be computed on the BASE BAND signal BEFORE matched filtering
-[pxx, f] = pwelch(pulse_train,1024,768,1024, fs); % note that pwr_spect.f will be normalized frequencies
+[pxx, f] = pwelch(pulse_train,1024,768,1024, f_sample); % note that pwr_spect.f will be normalized frequencies
 f = fftshift(f); %shift to be centered around fs
-f(1:length(f)/2) = f(1:length(f)/2) - fs; % center to be around zero
+f(1:length(f)/2) = f(1:length(f)/2) - f_sample; % center to be around zero
 p = fftshift(10*log10(pxx/max(pxx))); % shift, normalize and convert PSD to dB
 recObj.UserData.pwr_spect.f = f;
 recObj.UserData.pwr_spect.p = p;
