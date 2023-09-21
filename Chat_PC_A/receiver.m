@@ -17,8 +17,8 @@ function [audio_recorder] = receiver(fc)
     audio_recorder = audiorecorder(fs, 24, 1); % create the recorder
 
     %attach callback function
-    time_value = 1; % how often the function should be called in seconds
-    set(audio_recorder, 'TimerPeriod', time_value, 'TimerFcn', @audioTimerFcn); % attach a function that should be called every second, the function that is called is specified below.
+    callback_interval = 1; % how often the function should be called in seconds
+    set(audio_recorder, 'TimerPeriod', callback_interval, 'TimerFcn', @audioTimerFcn); % attach a function that should be called every second, the function that is called is specified below.
 
     %ADD USER DATA FOR CALLBACK FUNCTION (DO NOT CHANGE THE NAMES OF THESE VARIABLES!)
     audio_recorder.UserData.receive_complete = 0; % this is a flag that the while loop in the GUI will check
@@ -58,32 +58,24 @@ function audioTimerFcn(recObj, event, handles)
     f_sample = recObj.SampleRate;
     Tsample = 1 / f_sample;
 
+    %%%%%%%%%%%%%% Variables
     preamble = [1 2 2 2 3 3 0 0 0]; %TODO: change
     roll_off = 0.5;
-    span = 6
+    span = 6;
+    R_symb = 500; % Symbol rate [symb/s]    %Choose better wrt frequency mask
+    T_symb = 1 / R_symb; % Symbol time [s/symb]
+    fsfd = f_sample / R_symb; % Number of samples per symbol (choose fs such that fsfd is an integer) [samples/symb]
+    %%%%%%%%%%%%%%
+
 
     f_carrier = recObj.UserData.fc;
     N_bits = 432; % number of bits
     const = [(1 + 1i) (1 - 1i) (-1 + 1i) (-1 -1i)] / sqrt(2); % Constellation 1 - QPSK/4-QAM, [00 01 10 11], GRAY-encoded
-    quad_to_bits = [0 0; 1 0; 1 1; 0 1];
+    quad_to_bits = [0 0; 1 0; 1 1; 0 1]; % Quadrant number converted to bits
 
     M = length(const); % Number of symbols in the constellation
     bpsymb = log2(M); % Number of bits per symbol
     N_symbols = N_bits / bpsymb;
-
-    R_symb = 500; % Symbol rate [symb/s]
-    T_symb = 1 / R_symb; % Symbol time [s/symb]
-    fsfd = f_sample / R_symb; % Number of samples per symbol (choose fs such that fsfd is an integer) [samples/symb]
-
-    bits = randsrc(1, N_bits, [0 1]); % Information bits
-    m_buffer = buffer(bits, bpsymb)'; % Group bits into bits per symbol
-    m = bi2de(m_buffer, 'left-msb')' + 1; % Bits to symbol index
-    x = const(m); % Look up symbols using the indices
-    x = awgn(x, 15); % add artificial noise
-    x_upsample = upsample(x, fsfd); % Space the symbols fsfd apart, to enable pulse shaping using conv.
-    t_vec = -span * T_symb:1 / f_sample:span * T_symb; % create time vector for one sinc pulse
-    pulse = sinc(t_vec / T_symb); % create sinc pulse with span = 6
-    pulse_train = conv(pulse, x_upsample); % make pulse train
 
     rec_data = getaudiodata(recObj);
     rec_data_downConv = rec_data * exp(-1i * 2 * pi * f_carrier * (0:length(recdata) - 1) * Tsample);
@@ -113,7 +105,7 @@ function audioTimerFcn(recObj, event, handles)
     MF_sampled = MF_output(data_indices);
     %TODO: if exception, then wait for entire data pkg to arrive.
 
-    MF_sampled_rotated = MF_sampled .* exp(1i * (phase_shift / 180) * pi);
+    MF_sampled_rotated = MF_sampled .* exp(-1i * (phase_shift / 180) * pi);
 
     quadrant_number = mod(floor(angle(MF_sampled_rotated) / (pi / 2)), 4) + 1;
 
