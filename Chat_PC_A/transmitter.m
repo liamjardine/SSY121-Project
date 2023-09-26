@@ -41,7 +41,7 @@ function pulse_train = transmitter(pack, fc)
     x_upsample = upsample(x, Q);
     % Space the symbols fsfd apart, to enable pulse shaping using conv.
 
-    [pulse, t] = rcpuls(roll_off, 1 / R_symb, fs, span);
+    [pulse, t] = rtrcpuls(roll_off, 1 / R_symb, fs, span);
     pulse_train = conv(pulse, x_upsample);
     %or maybe fft
 %{
