@@ -1,4 +1,7 @@
 function res = fftconv(f,g)
+% fftconv  Convolve two vectors. Adds negligeble time cost (~1ms) for small
+% arrays (both lengths < 10 000) but improves significantly for larger arrays. 
+
     assert(ismatrix(f))
     assert(min(size(f))==1)
     if size(f,1) ~=1
