@@ -6,11 +6,9 @@
 %message='hello';
 %bin= dec2bin(message);
 %pack=bin;
-fc = 6000;
-pack = randsrc(1, N, [0 1]);
-s = transmitter1(pack, fc);
 
-function pulse_train = transmitter1(pack, fc)
+
+function pulse_train = transmitter(pack, fc)
 
     fs = 20000; %sampling frequency
     R_symb = 400; % Symbol rate
@@ -29,11 +27,10 @@ function pulse_train = transmitter1(pack, fc)
     bpsymb = log2(M); % Number of bits per symbol % Symbol rate [symb/s]
     % Number of samples per symbol (choose fs such that fsfd is an integer for simplicity) [samples/symb]
 
-    a = randsrc(1, N, [0 1]);
+    %a = randsrc(1, N, [0 1]);
     preamble = [1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1];
 
-    %a =pack ; % Information bits
-    %assume pack is ASCII code
+    a =pack ; % Information bits
 
     a = [preamble, a];
     m = buffer(a, bpsymb)'; % Group bits into bits per symbol
