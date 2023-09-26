@@ -2,15 +2,11 @@
 
 % pack = message to be transmitted (consists of 432 bits from the GUI, always!)
 % fc = carrier frequency
-
 %message='hello';
 %bin= dec2bin(message);
-%pack=bin;
-fc=6000;
-pack = randsrc(1,N,[0 1]);
-s=transmitter1(pack, fc);
+%pack=bin
 
-function s=transmitter1(pack,fc)
+function transmitter(pack,fc)
 
 fs = 5000; %sampling frequency
 Tsamp = 1/fs;
@@ -25,11 +21,9 @@ bpsymb = log2(M);                                        % Number of bits per sy
 fsymb = Rb/bpsymb;                                          % Symbol rate [symb/s]
 fsfd = round(fs/fsymb);                                       % Number of samples per symbol (choose fs such that fsfd is an integer for simplicity) [samples/symb]
 
-a = randsrc(1,N,[0 1]);
+%a = randsrc(1,N,[0 1]);
 preamble=[1,1,1,1,1,0,0,1,1,0,1,0,1];
-
-%a =pack ; % Information bits
-%assume pack is ASCII code
+a =pack ; % Information bits
 
 a=[preamble,a];
 m = buffer(a, bpsymb)';                           % Group bits into bits per symbol
@@ -75,6 +69,4 @@ title('tx_real')
 subplot(2,2,4); plot(t_vec+fc,imag(tx_signal), 'b');
 title('tx_imag')
 %}
-
-
 end
