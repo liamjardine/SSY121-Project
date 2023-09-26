@@ -64,7 +64,7 @@ title('imag')
     %tx_signal_real=real(s).*sqrt(2)*cos(2*pi*fc*(0:1:length(s)-1)*Tsamp);
     %tx_signal_imag=imag(s).*sqrt(2)*sin(2*pi*fc*(0:1:length(s)-1)*Tsamp);
     %tx_signal=tx_signal_real+tx_signal;
-    %tx_signal=real(tx_signal);        %take the real part
+    tx_signal=real(tx_signal);        %take the real part
     tx_signal = tx_signal ./ max(abs(tx_signal)); %normalize it
 
     player = audioplayer(tx_signal, fs);
