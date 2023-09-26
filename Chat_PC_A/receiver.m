@@ -17,7 +17,7 @@ function [audio_recorder] = receiver(fc)
     R_symb = 400; %TODO: Choose better wrt frequency mask
     Q = floor(fs / R_symb); % Samples per symbol
     fs = R_symb * Q; % Decided sampling frequency, everything is int
-    callback_interval = 1; % how often the function should be called in seconds
+    callback_interval = .5; % how often the function should be called in seconds
 
     assert(fs / 2 > fc, "Too low sampling frequency to abide Nyquist.")
 
@@ -65,7 +65,7 @@ function audioTimerFcn(recObj, event, handles)
 
     %%%%% Variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %TODO: Ansure consistency of roll off with TX
-    preamble = [1 2 2 2 3 3 0 0 0]; %TODO: change
+    preamble = [1 2 2 2 3 0 0 0]; %TODO: change
     roll_off = 0.3;
     span = 6;
     PA_thresh = 10; % Placeholder
@@ -86,7 +86,7 @@ function audioTimerFcn(recObj, event, handles)
     N_symbols = N_bits / bpsymb;
 
     rec_data = getaudiodata(recObj);
-    rec_data_downConv = rec_data * exp(-1i * 2 * pi * f_carrier * (0:length(rec_data) - 1) * Tsample);
+    rec_data_downConv = rec_data .* exp(1i * 2 * pi * f_carrier .* (0:length(rec_data) - 1) * Tsample);
     rec_data_lowpass = lowpass(rec_data_downConv, f_carrier, f_sample); % Trim LPF if we have noise problems
 
     preamble_upsample = upsample(const(preamble), Q);
@@ -97,6 +97,7 @@ function audioTimerFcn(recObj, event, handles)
     [max_correlation, max_index] = max(abs(preamble_corr));
 
     if max_correlation < PA_thresh
+        disp("No PA, only found noise :(")
         return
     end
 
