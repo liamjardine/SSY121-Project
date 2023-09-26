@@ -13,14 +13,13 @@
 %%
 
 function [audio_recorder] = receiver(fc)
-    fs = 25000;     %Goal sampling frequency
-    R_symb = 400;   %TODO: Choose better wrt frequency mask
-    Q = floor(fs/R_symb);   % Samples per symbol
-    fs = R_symb * Q;    % Decided sampling frequency, everything is int
+    fs = 25000; %Goal sampling frequency
+    R_symb = 400; %TODO: Choose better wrt frequency mask
+    Q = floor(fs / R_symb); % Samples per symbol
+    fs = R_symb * Q; % Decided sampling frequency, everything is int
     callback_interval = 1; % how often the function should be called in seconds
 
-
-    assert(fs/2 > fc, "Too low sampling frequency to abide Nyquist.")
+    assert(fs / 2 > fc, "Too low sampling frequency to abide Nyquist.")
 
     audio_recorder = audiorecorder(fs, 24, 1); % create the recorder
 
@@ -37,8 +36,6 @@ function [audio_recorder] = receiver(fc)
     audio_recorder.UserData.fc = fc;
     audio_recorder.UserData.Q = Q;
     audio_recorder.UserData.R_symb = R_symb;
-
-
 
     record(audio_recorder); %start recording
 end
@@ -65,21 +62,18 @@ function audioTimerFcn(recObj, event, handles)
 
     f_sample = recObj.SampleRate;
     Tsample = 1 / f_sample;
-    
 
-%%%%% Variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%% Variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %TODO: Ansure consistency of roll off with TX
     preamble = [1 2 2 2 3 3 0 0 0]; %TODO: change
     roll_off = 0.3;
     span = 6;
-    PA_thresh = 10;     % Placeholder
-%%%% Variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    PA_thresh = 10; % Placeholder
+    %%%% Variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-    R_symb = audio_recorder.UserData.R_symb; % Symbol rate [symb/s]    
+    R_symb = audio_recorder.UserData.R_symb; % Symbol rate [symb/s]
     T_symb = 1 / R_symb; % Symbol time [s/symb]
     Q = audio_recorder.UserData.Q; % Number of samples per symbol (choose fs such that Q is an integer) [samples/symb]
-
 
     f_carrier = recObj.UserData.fc;
     N_bits = 432; % number of bits
@@ -96,17 +90,16 @@ function audioTimerFcn(recObj, event, handles)
     rec_data_lowpass = lowpass(rec_data_downConv, f_carrier, f_sample); % Trim LPF if we have noise problems
 
     preamble_upsample = upsample(const(preamble), Q);
-    [pulse,~] = rtrcpuls(roll_off, T_symb, f_sample, span);
+    [pulse, ~] = rtrcpuls(roll_off, T_symb, f_sample, span);
     preamble_tx = conv(preamble_upsample, pulse);
     preamble_corr = conv(rec_data_lowpass, fliplr(conj(preamble_tx)));
 
     [max_correlation, max_index] = max(abs(preamble_corr));
-    
+
     if max_correlation < PA_thresh
         return
     end
 
-    
     data_start_index = max_index + 1;
     data_indices = data_start_index:Q:(data_start_index + (N_symbols - 1) * Q);
     phase_shift = mod(angle(preamble_corr(ind)) * 180 / pi, 360);
@@ -119,9 +112,11 @@ function audioTimerFcn(recObj, event, handles)
     try
         MF_sampled = MF_output(data_indices);
     catch ME
-       if ME.identifier == "MATLAB:badsubscript"
-           return
-       end
+
+        if ME.identifier == "MATLAB:badsubscript"
+            return
+        end
+
     end
 
     MF_sampled_rotated = MF_sampled .* exp(-1i * (phase_shift / 180) * pi);
