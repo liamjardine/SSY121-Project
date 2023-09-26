@@ -60,7 +60,7 @@ subplot(2,2,2); plot(t_vec,imag(s), 'b');
 title('imag')
 %}
 
-    tx_signal = pulse_train .* exp(-1i * pi * fc * (0:1:length(pulse_train) - 1) * Tsamp); %carrier
+    tx_signal = pulse_train .* exp(-1i * 2* pi * fc * (0:1:length(pulse_train) - 1) * Tsamp); %carrier
     %tx_signal_real=real(s).*sqrt(2)*cos(2*pi*fc*(0:1:length(s)-1)*Tsamp);
     %tx_signal_imag=imag(s).*sqrt(2)*sin(2*pi*fc*(0:1:length(s)-1)*Tsamp);
     %tx_signal=tx_signal_real+tx_signal;
