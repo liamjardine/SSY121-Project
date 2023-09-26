@@ -20,8 +20,9 @@ function pulse_train = transmitter(pack, fc)
 
     Tsamp = 1 / fs;
     N = 432; % number of bits to transmit
+    assert(length(pack) == N, "The pack to transmitt is of wrong length")
     % Constellation or bit to symbol mapping
-    const = [(1 + 1i) (1 - 1i) (-1 -1i) (-1 + 1i)] / sqrt(2); % Constellation 1 - QPSK/4-QAM
+    const = [(1 + 1i) (1 - 1i) (-1 + 1i) (-1 -1i)] / sqrt(2); % Constellation 1 - QPSK/4-QAM
 
     M = length(const); % Number of symbols in the constellation
     bpsymb = log2(M); % Number of bits per symbol % Symbol rate [symb/s]
