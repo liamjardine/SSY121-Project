@@ -13,11 +13,11 @@
 %%
 
 function [audio_recorder] = receiver(fc)
-    fs = 25000; %Goal sampling frequency
-    R_symb = 100; %TODO: Choose better wrt frequency mask
+    fs = 40000; %Goal sampling frequency
+    R_symb = 125; %TODO: Choose better wrt frequency mask
     Q = floor(fs / R_symb); % Samples per symbol
     fs = R_symb * Q; % Decided sampling frequency, everything is int
-    callback_interval = 1.5; % how often the function should be called in seconds
+    callback_interval = 0.25; % how often the function should be called in seconds
 
     assert(fs / 2 > fc, "Too low sampling frequency to abide Nyquist.")
 
@@ -58,7 +58,7 @@ end
 % M = 4 (using QPSK as in computer exercise)
 
 function audioTimerFcn(recObj, event, handles)
-    disp('Callback triggered JB')
+    %disp('Callback triggered JB')
 
     f_sample = recObj.SampleRate;
     Tsample = 1 / f_sample;
@@ -83,15 +83,25 @@ function audioTimerFcn(recObj, event, handles)
     M = length(const); % Number of symbols in the constellation
     bpsymb = log2(M); % Number of bits per symbol
     N_symbols = N_bits / bpsymb;
+    samples_to_keep = (N_symbols + length(preamble)) / R_symb * f_sample * 2;
+    samples_to_keep = ceil(samples_to_keep);
+
+
     
     rec_data = getaudiodata(recObj)';
-    disp(size(rec_data))
+    try
+        rec_data = rec_data(1,(end-samples_to_keep):end);
+    catch
+        disp("Buffer is shorter than our desired length.")
+    end
+    %disp(size(rec_data))
+
     rec_data_downConv = rec_data .* exp(1i * 2 * pi * f_carrier .* (0:length(rec_data) - 1) * Tsample);
     rec_data_lowpass = lowpass(rec_data_downConv, f_carrier, f_sample); % Trim LPF if we have noise problems
     preamble_upsample = upsample(const(preamble), Q);
     [pulse, ~] = rtrcpuls(roll_off, T_symb, f_sample, span);
-    preamble_tx = conv(preamble_upsample, pulse);
-    preamble_corr = conv(rec_data_lowpass, fliplr(conj(preamble_tx)));
+    preamble_tx = fftconv(preamble_upsample, pulse);
+    preamble_corr = fftconv(rec_data_lowpass, fliplr(conj(preamble_tx)));
     [max_correlation, max_index] = max(abs(preamble_corr));
 
     disp(max_correlation + " is max corr now")
@@ -100,26 +110,19 @@ function audioTimerFcn(recObj, event, handles)
         return
     end
 
-    disp("Just about to start doing data indices")
     data_start_index = max_index + 1;
-    disp(13)
     data_indices = data_start_index:Q:(data_start_index + (N_symbols - 1) * Q);
-    disp(14)
     phase_shift = mod(angle(preamble_corr(max_index)) * 180 / pi, 360);
-    disp(15)
 
     matched_filter = fliplr(conj(pulse));
-    disp(16)
-    %TODO: only convolve on the relevant part of the input stream to speed
-    %up
-    MF_output = conv(rec_data_lowpass, matched_filter);
+    MF_output = fftconv(rec_data_lowpass, matched_filter);
 
     try
         MF_sampled = MF_output(data_indices);
     catch ME
 
         if ME.identifier == "MATLAB:badsubscript"
-            disp("tried to extract data but message is not here yet")
+            disp("Tried to extract data but message is not here yet")
             return
         end
 
@@ -141,11 +144,13 @@ function audioTimerFcn(recObj, event, handles)
     recObj.UserData.pack = bits;
 
     % Step 2: save the sampled symbols
-    recObj.UserData.const = MF_sampled_rotated;
+    recObj.UserData.const = MF_sampled_rotated/max(abs(MF_sampled_rotated));
 
     % Step 3: provide the matched filter output for the eye diagram (Note here no match filter is used. You should do that)
-    recObj.UserData.eyed.r = MF_output;
-    recObj.UserData.eyed.fsfd = Q;
+    MF_ind_low =  max_index - length(preamble_tx);
+    MF_ind_high = max_index + 1 + Q * N_symbols;
+    recObj.UserData.eyed.r = MF_output(1,MF_ind_low:MF_ind_high);
+    recObj.UserData.eyed.fsfd = Q;  
 
     % Step 4: Compute the PSD and save it.
     % !!!! NOTE !!!! the PSD should be computed on the BASE BAND signal BEFORE matched filtering
@@ -159,5 +164,5 @@ function audioTimerFcn(recObj, event, handles)
     % In order to make the GUI look at the data, we need to set the
     % receive_complete flag equal to 1:
     recObj.UserData.receive_complete = 1;
-
+    disp("Data done!")
 end
