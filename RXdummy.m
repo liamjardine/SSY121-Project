@@ -37,9 +37,9 @@ function bits=RXdummy(TX,f_carrier)
 
 
     [max_correlation, max_index] = max(abs(preamble_corr));
-    %figure(1)
-    %plot(abs(preamble_corr))
-    %title("PA corr")
+    figure(1)
+    plot(abs(preamble_corr))
+    title("PA corr")
     if max_correlation < PA_thresh
         disp("No PA, only found noise :(")
         return
@@ -66,9 +66,9 @@ function bits=RXdummy(TX,f_carrier)
     end
 
     MF_sampled_rotated = MF_sampled .* exp(-1i * (phase_shift / 180) * pi);
-    %scatterplot(MF_sampled)
+    scatterplot(MF_sampled)
 
-    %scatterplot(MF_sampled_rotated)
+    scatterplot(MF_sampled_rotated)
 
     quadrant_number = mod(floor(angle(MF_sampled_rotated) / (pi / 2)), 4) + 1;
 

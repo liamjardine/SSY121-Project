@@ -4,7 +4,7 @@ fc = 2000;
 
 
 TX = TXdummy(pack,fc);
-TX_A = awgn(TX,-8, 'measured');
+TX_A = awgn(TX,-5, 'measured');
 TX_AR = TX_A*exp(1i *rand(1));
 
 
