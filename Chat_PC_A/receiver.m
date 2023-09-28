@@ -14,10 +14,10 @@
 
 function [audio_recorder] = receiver(fc)
     fs = 25000; %Goal sampling frequency
-    R_symb = 400; %TODO: Choose better wrt frequency mask
+    R_symb = 100; %TODO: Choose better wrt frequency mask
     Q = floor(fs / R_symb); % Samples per symbol
     fs = R_symb * Q; % Decided sampling frequency, everything is int
-    callback_interval = .5; % how often the function should be called in seconds
+    callback_interval = 1.5; % how often the function should be called in seconds
 
     assert(fs / 2 > fc, "Too low sampling frequency to abide Nyquist.")
 
@@ -58,23 +58,22 @@ end
 % M = 4 (using QPSK as in computer exercise)
 
 function audioTimerFcn(recObj, event, handles)
-    disp('Callback triggered')
+    disp('Callback triggered JB')
 
     f_sample = recObj.SampleRate;
     Tsample = 1 / f_sample;
 
     %%%%% Variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %TODO: Ansure consistency of roll off with TX
-    preamble = [1 2 2 2 3 0 0 0]; %TODO: change
+    preamble = [1 2 2 2 4 3 3 4]; %TODO: change
     roll_off = 0.3;
     span = 6;
-    PA_thresh = 10; % Placeholder
+    PA_thresh = 0.3; % Placeholder
     %%%% Variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    R_symb = audio_recorder.UserData.R_symb; % Symbol rate [symb/s]
+    R_symb = recObj.UserData.R_symb; % Symbol rate [symb/s]
     T_symb = 1 / R_symb; % Symbol time [s/symb]
-    Q = audio_recorder.UserData.Q; % Number of samples per symbol (choose fs such that Q is an integer) [samples/symb]
-
+    Q = recObj.UserData.Q; % Number of samples per symbol (choose fs such that Q is an integer) [samples/symb]
     f_carrier = recObj.UserData.fc;
     N_bits = 432; % number of bits
     % TODO: ensure consistency of constellation
@@ -84,28 +83,33 @@ function audioTimerFcn(recObj, event, handles)
     M = length(const); % Number of symbols in the constellation
     bpsymb = log2(M); % Number of bits per symbol
     N_symbols = N_bits / bpsymb;
-
-    rec_data = getaudiodata(recObj);
+    
+    rec_data = getaudiodata(recObj)';
+    disp(size(rec_data))
     rec_data_downConv = rec_data .* exp(1i * 2 * pi * f_carrier .* (0:length(rec_data) - 1) * Tsample);
     rec_data_lowpass = lowpass(rec_data_downConv, f_carrier, f_sample); % Trim LPF if we have noise problems
-
     preamble_upsample = upsample(const(preamble), Q);
     [pulse, ~] = rtrcpuls(roll_off, T_symb, f_sample, span);
     preamble_tx = conv(preamble_upsample, pulse);
     preamble_corr = conv(rec_data_lowpass, fliplr(conj(preamble_tx)));
-
     [max_correlation, max_index] = max(abs(preamble_corr));
 
+    disp(max_correlation + " is max corr now")
     if max_correlation < PA_thresh
         disp("No PA, only found noise :(")
         return
     end
 
+    disp("Just about to start doing data indices")
     data_start_index = max_index + 1;
+    disp(13)
     data_indices = data_start_index:Q:(data_start_index + (N_symbols - 1) * Q);
+    disp(14)
     phase_shift = mod(angle(preamble_corr(ind)) * 180 / pi, 360);
+    disp(15)
 
     matched_filter = fliplr(conj(pulse));
+    disp(16)
     %TODO: only convolve on the relevant part of the input stream to speed
     %up
     MF_output = conv(rec_data_lowpass, matched_filter);
@@ -115,6 +119,7 @@ function audioTimerFcn(recObj, event, handles)
     catch ME
 
         if ME.identifier == "MATLAB:badsubscript"
+            disp("tried to extract data but message is not here yet")
             return
         end
 
