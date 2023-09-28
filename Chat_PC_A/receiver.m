@@ -66,7 +66,7 @@ function audioTimerFcn(recObj, event, handles)
     %%%%% Variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %TODO: Ansure consistency of roll off with TX
     preamble = [1 2 2 2 4 3 3 4]; %TODO: change
-    roll_off = 0.3;
+    roll_off = 0.35;
     span = 6;
     PA_thresh = 0.3; % Placeholder
     %%%% Variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -105,7 +105,7 @@ function audioTimerFcn(recObj, event, handles)
     disp(13)
     data_indices = data_start_index:Q:(data_start_index + (N_symbols - 1) * Q);
     disp(14)
-    phase_shift = mod(angle(preamble_corr(ind)) * 180 / pi, 360);
+    phase_shift = mod(angle(preamble_corr(max_index)) * 180 / pi, 360);
     disp(15)
 
     matched_filter = fliplr(conj(pulse));
