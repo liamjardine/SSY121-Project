@@ -1,17 +1,4 @@
 % RECEIVER
-%
-% This is the receiver structure that you will have to complete.
-% The function: receiver(fc) is a setup function for the receiver. Here,
-% the audiorecorder object is initialized (see help audiorecorder or
-% MATLAB's homepage for more information about the object).
-%
-% The callback function audioTimerFcn() is a callback function that is
-% triggered on a specified time interval (here it is determined in the
-% setup function, by the variable time_value)
-%
-% Your task is to extend this code to work in the project!
-%%
-
 function [audio_recorder] = receiver(fc)
     fs = 40000; %Goal sampling frequency
     R_symb = 125; %TODO: Choose better wrt frequency mask
@@ -41,34 +28,20 @@ function [audio_recorder] = receiver(fc)
 end
 
 % CALLBACK FUNCTION
-% This function will be called every [time_value] seconds, where time_value
-% is specified above. Note that, as stated in the project MEMO, all the
-% fields: pwr_spect, eyed, const and pack need to be assigned if you want
-% to get outputs in the GUI.
-
-% So, let's see an example of where we have a pulse train as in Computer
-% exercise 2 and let the GUI plot it. Note that we will just create 432
-% random bits and hence, the GUI will not be able to decode the message but
-% only to display the figures.
-% Parameters in the example:
-% f_s = 22050 [samples / second]
-% R_s = 350 [symbols / second]
-% fsfd = f_s/R_s [samples / symbol]
-% a = 432 bits
-% M = 4 (using QPSK as in computer exercise)
-
 function audioTimerFcn(recObj, event, handles)
-    %disp('Callback triggered JB')
+    %disp('Callback triggered')
+    t_start = posixtime(datetime);
 
     f_sample = recObj.SampleRate;
     Tsample = 1 / f_sample;
 
     %%%%% Variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %TODO: Ansure consistency of roll off with TX
+    %TODO: Ensure consistency of roll off with TX
     preamble = [1 2 2 2 4 3 3 4]; %TODO: change
     roll_off = 0.35;
     span = 6;
     PA_thresh = 0.3; % Placeholder
+    msg_to_keep = 2;
     %%%% Variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     R_symb = recObj.UserData.R_symb; % Symbol rate [symb/s]
@@ -83,8 +56,10 @@ function audioTimerFcn(recObj, event, handles)
     M = length(const); % Number of symbols in the constellation
     bpsymb = log2(M); % Number of bits per symbol
     N_symbols = N_bits / bpsymb;
-    samples_to_keep = (N_symbols + length(preamble)) / R_symb * f_sample * 2;
-    samples_to_keep = ceil(samples_to_keep);
+
+    % Keep msg_to_keep number seconds in the processing "buffer"
+    samples_per_msg = (N_symbols + length(preamble)) / R_symb * f_sample;
+    samples_to_keep = ceil(samples_per_msg * msg_to_keep);
 
 
     
@@ -94,10 +69,10 @@ function audioTimerFcn(recObj, event, handles)
     catch
         disp("Buffer is shorter than our desired length.")
     end
-    %disp(size(rec_data))
 
     rec_data_downConv = rec_data .* exp(1i * 2 * pi * f_carrier .* (0:length(rec_data) - 1) * Tsample);
     rec_data_lowpass = lowpass(rec_data_downConv, f_carrier, f_sample); % Trim LPF if we have noise problems
+
     preamble_upsample = upsample(const(preamble), Q);
     [pulse, ~] = rtrcpuls(roll_off, T_symb, f_sample, span);
     preamble_tx = fftconv(preamble_upsample, pulse);
@@ -135,6 +110,8 @@ function audioTimerFcn(recObj, event, handles)
     bits = quad_to_bits(quadrant_number, :);
     bits = reshape(bits', 1, []);
 
+
+
     %------------------------------------------------------------------------------
     % HOW TO SAVE DATA FOR THE GUI
     %   NOTE THAT THE EXAMPLE HERE IS ONLY USED TO SHOW HOW TO OUTPUT DATA
@@ -161,8 +138,10 @@ function audioTimerFcn(recObj, event, handles)
     recObj.UserData.pwr_spect.f = f;
     recObj.UserData.pwr_spect.p = p;
 
-    % In order to make the GUI look at the data, we need to set the
-    % receive_complete flag equal to 1:
+
+        
+    t_end = posixtime(datetime);
+    delta = (t_end-t_start) * 1000;
+    disp("Data done! Message processing took " + delta + " milliseconds")
     recObj.UserData.receive_complete = 1;
-    disp("Data done!")
 end
