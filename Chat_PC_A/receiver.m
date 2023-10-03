@@ -1,7 +1,7 @@
 % RECEIVER
 function [audio_recorder] = receiver(fc)
     fs = 40000; %Goal sampling frequency
-    R_symb = 125; %TODO: Choose better wrt frequency mask
+    R_symb = 150; %TODO: Choose better wrt frequency mask
     Q = floor(fs / R_symb); % Samples per symbol
     fs = R_symb * Q; % Decided sampling frequency, everything is int
     callback_interval = 0.25; % how often the function should be called in seconds
