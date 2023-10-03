@@ -5,6 +5,8 @@ function [audio_recorder] = receiver(fc)
     Q = floor(fs / R_symb); % Samples per symbol
     fs = R_symb * Q; % Decided sampling frequency, everything is int
     callback_interval = 0.25; % how often the function should be called in seconds
+    min_eye_res = 40; % Minimum Q to display in eye diagram. Makes GUI faster
+
 
     assert(fs / 2 > fc, "Too low sampling frequency to abide Nyquist.")
 
@@ -24,6 +26,10 @@ function [audio_recorder] = receiver(fc)
     audio_recorder.UserData.Q = Q;
     audio_recorder.UserData.R_symb = R_symb;
 
+    optimum_reduction = ceil(Q/min_eye_res);
+    divs = divisors(Q);
+    audio_recorder.UserData.best_Q_divisor = max(divs(divs<=optimum_reduction));
+
     record(audio_recorder); %start recording
 end
 
@@ -37,7 +43,7 @@ function audioTimerFcn(recObj, event, handles)
 
     %%%%% Variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %TODO: Ensure consistency of roll off with TX
-    preamble = zadoffChuSeq(859,13);
+    preamble = zadoffChuSeq(859, 13);
     roll_off = 0.35;
     span = 6;
     PA_thresh = 0.3; % Placeholder
@@ -61,11 +67,10 @@ function audioTimerFcn(recObj, event, handles)
     samples_per_msg = (N_symbols + length(preamble)) / R_symb * f_sample;
     samples_to_keep = ceil(samples_per_msg * msg_to_keep);
 
-
-    
     rec_data = getaudiodata(recObj)';
+
     try
-        rec_data = rec_data(1,(end-samples_to_keep):end);
+        rec_data = rec_data(1, (end - samples_to_keep):end);
     catch
         disp("Buffer is shorter than our desired length.")
     end
@@ -80,6 +85,7 @@ function audioTimerFcn(recObj, event, handles)
     [max_correlation, max_index] = max(abs(preamble_corr));
 
     disp(max_correlation + " is max corr now")
+
     if max_correlation < PA_thresh
         disp("No PA, only found noise :(")
         return
@@ -110,8 +116,6 @@ function audioTimerFcn(recObj, event, handles)
     bits = quad_to_bits(quadrant_number, :);
     bits = reshape(bits', 1, []);
 
-
-
     %------------------------------------------------------------------------------
     % HOW TO SAVE DATA FOR THE GUI
     %   NOTE THAT THE EXAMPLE HERE IS ONLY USED TO SHOW HOW TO OUTPUT DATA
@@ -121,13 +125,16 @@ function audioTimerFcn(recObj, event, handles)
     recObj.UserData.pack = bits;
 
     % Step 2: save the sampled symbols
-    recObj.UserData.const = MF_sampled_rotated/max(abs(MF_sampled_rotated));
+    recObj.UserData.const = MF_sampled_rotated / max(abs(MF_sampled_rotated));
 
     % Step 3: provide the matched filter output for the eye diagram (Note here no match filter is used. You should do that)
-    MF_ind_low =  max_index - length(preamble_tx);
-    MF_ind_high = max_index + 1 + Q * N_symbols;
-    recObj.UserData.eyed.r = MF_output(1,MF_ind_low:MF_ind_high);
-    recObj.UserData.eyed.fsfd = Q;  
+    MF_ind_low = max_index - floor(Q / 2);
+    MF_ind_high = max_index - floor(Q / 2) + Q * N_symbols;
+    MF_to_eye = MF_output(1, MF_ind_low:MF_ind_high);
+
+    best_Q_divisor = audio_recorder.UserData.best_Q_divisor;    % Downsample Q for faster view of eyediagram
+    recObj.UserData.eyed.r = MF_to_eye(1,1:best_Q_divisor:end);
+    recObj.UserData.eyed.fsfd = Q/best_Q_divisor;
 
     % Step 4: Compute the PSD and save it.
     % !!!! NOTE !!!! the PSD should be computed on the BASE BAND signal BEFORE matched filtering
@@ -138,10 +145,8 @@ function audioTimerFcn(recObj, event, handles)
     recObj.UserData.pwr_spect.f = f;
     recObj.UserData.pwr_spect.p = p;
 
-
-        
     t_end = posixtime(datetime);
-    delta = (t_end-t_start) * 1000;
+    delta = (t_end - t_start) * 1000;
     disp("Data done! Message processing took " + delta + " milliseconds")
     recObj.UserData.receive_complete = 1;
 end
