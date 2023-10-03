@@ -28,11 +28,12 @@ function pulse_train = transmitter(pack, fc)
     M = length(const); % Number of symbols in the constellation
     bpsymb = log2(M); % Number of bits per symbol % Symbol rate [symb/s]
 
-    preamble = [1 2 2 2 4 3 3 4];
+    preamble = zadoffChuSeq(859,13);
 
     grouped_bits = buffer(pack, bpsymb)'; % Group bits into bits per symbol
     bits_as_symbols = bi2de(grouped_bits, 'left-msb')' + 1; % Bits to symbol index 01=(2^0+2^1)=3(+1 constallation)
-    x = const([preamble bits_as_symbols]); % Look up symbols using the indices
+    x = const(bits_as_symbols); % Look up symbols using the indices
+    x = [preamble x];
 
     x_upsample = upsample(x, Q);
     % Space the symbols fsfd apart, to enable pulse shaping using conv.

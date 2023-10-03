@@ -37,7 +37,7 @@ function audioTimerFcn(recObj, event, handles)
 
     %%%%% Variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %TODO: Ensure consistency of roll off with TX
-    preamble = [1 2 2 2 4 3 3 4]; %TODO: change
+    preamble = zadoffChuSeq(859,13);
     roll_off = 0.35;
     span = 6;
     PA_thresh = 0.3; % Placeholder
@@ -73,7 +73,7 @@ function audioTimerFcn(recObj, event, handles)
     rec_data_downConv = rec_data .* exp(1i * 2 * pi * f_carrier .* (0:length(rec_data) - 1) * Tsample);
     rec_data_lowpass = lowpass(rec_data_downConv, f_carrier, f_sample); % Trim LPF if we have noise problems
 
-    preamble_upsample = upsample(const(preamble), Q);
+    preamble_upsample = upsample(preamble, Q);
     [pulse, ~] = rtrcpuls(roll_off, T_symb, f_sample, span);
     preamble_tx = fftconv(preamble_upsample, pulse);
     preamble_corr = fftconv(rec_data_lowpass, fliplr(conj(preamble_tx)));
