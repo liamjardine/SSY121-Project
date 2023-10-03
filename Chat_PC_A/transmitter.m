@@ -30,10 +30,9 @@ function pulse_train = transmitter(pack, fc)
 
     preamble = [1 2 2 2 4 3 3 4];
 
-    a = pack ; % Information bits
-    m = buffer(a, bpsymb)'; % Group bits into bits per symbol
-    m = bi2de(m, 'left-msb')' + 1; % Bits to symbol index 01=(2^0+2^1)=3(+1 constallation)
-    x = const([preamble m]); % Look up symbols using the indices
+    grouped_bits = buffer(pack, bpsymb)'; % Group bits into bits per symbol
+    bits_as_symbols = bi2de(grouped_bits, 'left-msb')' + 1; % Bits to symbol index 01=(2^0+2^1)=3(+1 constallation)
+    x = const([preamble bits_as_symbols]); % Look up symbols using the indices
 
     x_upsample = upsample(x, Q);
     % Space the symbols fsfd apart, to enable pulse shaping using conv.
