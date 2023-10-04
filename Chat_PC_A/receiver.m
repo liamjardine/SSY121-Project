@@ -43,7 +43,7 @@ function audioTimerFcn(recObj, event, handles)
 
     %%%%% Variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %TODO: Ensure consistency of roll off with TX
-    preamble = zadoffChuSeq(859, 13);
+    preamble = zadoffChuSeq(859, 13)';
     roll_off = 0.35;
     span = 6;
     PA_thresh = 0.3; % Placeholder

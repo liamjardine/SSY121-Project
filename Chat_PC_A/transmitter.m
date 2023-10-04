@@ -28,7 +28,7 @@ function pulse_train = transmitter(pack, fc)
     M = length(const); % Number of symbols in the constellation
     bpsymb = log2(M); % Number of bits per symbol % Symbol rate [symb/s]
 
-    preamble = zadoffChuSeq(859,13);
+    preamble = zadoffChuSeq(859,13)';
 
     grouped_bits = buffer(pack, bpsymb)'; % Group bits into bits per symbol
     bits_as_symbols = bi2de(grouped_bits, 'left-msb')' + 1; % Bits to symbol index 01=(2^0+2^1)=3(+1 constallation)
