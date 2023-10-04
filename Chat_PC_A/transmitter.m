@@ -20,7 +20,7 @@ function pulse_train = transmitter(pack, fc)
 
     Tsamp = 1 / fs;
     N = 432; % number of bits to transmit
-    assert(length(pack) == N, "The pack to transmitt is of wrong length")
+    assert(length(pack) == N, "The pack to transmit is of wrong length")
     
     % Constellation or bits to symbol mapping
     const = [(1 + 1i) (1 - 1i) (-1 + 1i) (-1 -1i)] / sqrt(2); % Constellation 1 - QPSK/4-QAM
@@ -35,8 +35,9 @@ function pulse_train = transmitter(pack, fc)
     x = const(bits_as_symbols); % Look up symbols using the indices
     x = [preamble x];
 
+    % Space the symbols Q apart, to enable pulse shaping using conv.
     x_upsample = upsample(x, Q);
-    % Space the symbols fsfd apart, to enable pulse shaping using conv.
+    
 
     [pulse, t] = rtrcpuls(roll_off, 1 / R_symb, fs, span);
     pulse_train = conv(pulse, x_upsample);

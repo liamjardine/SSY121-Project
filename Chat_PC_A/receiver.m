@@ -41,34 +41,33 @@ function audioTimerFcn(recObj, event, handles)
     f_sample = recObj.SampleRate;
     Tsample = 1 / f_sample;
 
-    %%%%% Variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%% Variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %TODO: Ensure consistency of roll off with TX
     preamble = zadoffChuSeq(859, 13)';
     roll_off = 0.35;
     span = 6;
     PA_thresh = 0.3; % Placeholder
     msg_to_keep = 2;
-    %%%% Variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%% Variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     R_symb = recObj.UserData.R_symb; % Symbol rate [symb/s]
     T_symb = 1 / R_symb; % Symbol time [s/symb]
     Q = recObj.UserData.Q; % Number of samples per symbol (choose fs such that Q is an integer) [samples/symb]
     f_carrier = recObj.UserData.fc;
     N_bits = 432; % number of bits
-    % TODO: ensure consistency of constellation
     const = [(1 + 1i) (1 - 1i) (-1 + 1i) (-1 -1i)] / sqrt(2); % Constellation QPSK/4-QAM, [00 01 10 11], GRAY-encoded
     quad_to_bits = [0 0; 1 0; 1 1; 0 1]; % Quadrant number converted to bits
 
     M = length(const); % Number of symbols in the constellation
-    bpsymb = log2(M); % Number of bits per symbol
-    N_symbols = N_bits / bpsymb;
+    bits_per_symbol = log2(M);
+    N_symbols = N_bits / bits_per_symbol;
 
-    % Keep msg_to_keep number seconds in the processing "buffer"
+    % Keep samples equal to {msg_to_keep} messages in buffer
     samples_per_msg = (N_symbols + length(preamble)) / R_symb * f_sample;
     samples_to_keep = ceil(samples_per_msg * msg_to_keep);
 
-    rec_data = getaudiodata(recObj)';
 
+    rec_data = getaudiodata(recObj)'; % As row vector
     try
         rec_data = rec_data(1, (end - samples_to_keep):end);
     catch
