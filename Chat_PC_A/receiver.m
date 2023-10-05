@@ -26,8 +26,14 @@ function [audio_recorder] = receiver(fc)
     audio_recorder.UserData.Q = Q;
     audio_recorder.UserData.R_symb = R_symb;
 
-    optimum_reduction = ceil(Q/min_eye_res);
-    divs = divisors(Q);
+    optimum_reduction = ceil(Q/min_eye_res);    %What to divide Q with
+    divs = [];
+    for i=1:optimum_reduction
+        divs = [divs gcd(Q,i)]; % Get divisors without requiring Symbolic Toolbox
+    end
+    divs = unique(divs);
+
+    % Divide Q with the largest divisor less or equal to or desired one.
     audio_recorder.UserData.best_Q_divisor = max(divs(divs<=optimum_reduction));
 
     record(audio_recorder); %start recording
