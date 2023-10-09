@@ -59,7 +59,7 @@ function audioTimerFcn(recObj, event, handles)
     T_symb = 1 / R_symb;    % Symbol time [s/symb]
     Q = recObj.UserData.Q;  % Number of samples per symbol (choose fs such that Q is an integer) [samples/symb]
     f_carrier = recObj.UserData.f_carrier;
-    N_bits = 432 + 2*10;   % number of bits
+    N_bits = 432;   % number of bits
     const = [(1 + 1i) (1 - 1i) (-1 + 1i) (-1 -1i)] / sqrt(2);   % Constellation QPSK/4-QAM, [00 01 10 11], GRAY-encoded
     quad_to_bits = [0 0; 1 0; 1 1; 0 1];    % Quadrant number converted to bits
 
@@ -116,9 +116,7 @@ function audioTimerFcn(recObj, event, handles)
 
     bits = quad_to_bits(quadrant_number, :);
     bits = reshape(bits', 1, []);
-    bits = bits(1:end-2*10);
-
-
+    
 
     %%%%% GUI %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % The estimated bits
