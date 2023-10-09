@@ -1,0 +1,1 @@
+ ls .\Chat_PC_A\*.m | Copy-Item -Destination .\Chat_PC_B\

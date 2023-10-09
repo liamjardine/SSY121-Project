@@ -1,13 +1,3 @@
-% COMPLETE THE TRANSMITTER!
-
-% pack = message to be transmitted (consists of 432 bits from the GUI, always!)
-% fc = carrier frequency
-
-%message='hello';
-%bin= dec2bin(message);
-%pack=bin;
-
-
 function pulse_train = transmitter(pack, fc)
 
     fs = 26000; %sampling frequency
