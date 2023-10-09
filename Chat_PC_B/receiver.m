@@ -59,7 +59,7 @@ function audioTimerFcn(recObj, event, handles)
     T_symb = 1 / R_symb;    % Symbol time [s/symb]
     Q = recObj.UserData.Q;  % Number of samples per symbol (choose fs such that Q is an integer) [samples/symb]
     f_carrier = recObj.UserData.f_carrier;
-    N_bits = 432;   % number of bits
+    N_bits = 432 + 2*10;   % number of bits
     const = [(1 + 1i) (1 - 1i) (-1 + 1i) (-1 -1i)] / sqrt(2);   % Constellation QPSK/4-QAM, [00 01 10 11], GRAY-encoded
     quad_to_bits = [0 0; 1 0; 1 1; 0 1];    % Quadrant number converted to bits
 
@@ -102,15 +102,12 @@ function audioTimerFcn(recObj, event, handles)
     matched_filter = fliplr(conj(pulse));
     MF_output = fftconv(rec_data_lowpass, matched_filter);
 
-    try
+    % Make sure we have the last symbol, which spills over with Q*span
+    % samples from the actual sampling point
+    if length(MF_output) > (data_indices(end)+Q*(span+1))
         MF_sampled = MF_output(data_indices);
-    catch ME
-
-        if ME.identifier == "MATLAB:badsubscript"
-            %disp("Tried to extract data but message is not here yet")
-            return
-        end
-
+    else
+        return
     end
 
     MF_sampled_rotated = MF_sampled .* exp(-1i * (phase_shift / 180) * pi);
@@ -119,6 +116,7 @@ function audioTimerFcn(recObj, event, handles)
 
     bits = quad_to_bits(quadrant_number, :);
     bits = reshape(bits', 1, []);
+    bits = bits(1:end-2*10);
 
 
 
