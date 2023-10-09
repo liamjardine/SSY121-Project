@@ -1,7 +1,7 @@
 function pulse_train = transmitter(pack, fc)
 
     fs = 26000; %sampling frequency
-    R_symb = 150; % Symbol rate
+    R_symb = 200; % Symbol rate
     Q = floor(fs / R_symb); %Q=fsfd, samples per symbol
     fs = Q * R_symb;
 

@@ -1,7 +1,7 @@
 % RECEIVER
 function [audio_recorder] = receiver(f_carrier)
-    fs = 20000;     % Goal sampling frequency
-    R_symb = 150;   % Symbol rate
+    fs = 28000;     % Goal sampling frequency
+    R_symb = 200;   % Symbol rate
     Q = floor(fs / R_symb);     % Samples per symbol
     fs = R_symb * Q;    % Decided sampling frequency, everything is int
     callback_interval = 0.25;   % how often the function should be called in seconds
@@ -116,7 +116,8 @@ function audioTimerFcn(recObj, event, handles)
 
     bits = quad_to_bits(quadrant_number, :);
     bits = reshape(bits', 1, []);
-    
+
+
 
     %%%%% GUI %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % The estimated bits
