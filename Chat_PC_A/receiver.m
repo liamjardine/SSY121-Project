@@ -1,6 +1,6 @@
 % RECEIVER
 function [audio_recorder] = receiver(fc)
-    fs = 40000; %Goal sampling frequency
+    fs = 20000; %Goal sampling frequency
     R_symb = 150; %TODO: Choose better wrt frequency mask
     Q = floor(fs / R_symb); % Samples per symbol
     fs = R_symb * Q; % Decided sampling frequency, everything is int
@@ -52,7 +52,7 @@ function audioTimerFcn(recObj, event, handles)
     preamble = zadoffChuSeq(859, 13)';
     roll_off = 0.35;
     span = 6;
-    PA_thresh = 0.3; % Placeholder
+    PA_thresh = 1; % Placeholder
     msg_to_keep = 2;
     %%%% Variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
