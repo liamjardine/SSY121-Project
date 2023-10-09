@@ -77,7 +77,7 @@ function audioTimerFcn(recObj, event, handles)
     try
         rec_data = rec_data(1, (end - samples_to_keep):end);
     catch
-        disp("Buffer is shorter than our desired length.")
+        %disp("Buffer is shorter than our desired length.")
     end
 
     rec_data_downConv = rec_data .* exp(1i * 2 * pi * f_carrier .* (0:length(rec_data) - 1) * Tsample);
@@ -89,10 +89,10 @@ function audioTimerFcn(recObj, event, handles)
     preamble_corr = fftconv(rec_data_lowpass, fliplr(conj(preamble_tx)));
     [max_correlation, max_index] = max(abs(preamble_corr));
 
-    disp(max_correlation + " is max corr now")
+    %disp(max_correlation + " is max corr now")
 
     if max_correlation < PA_thresh
-        disp("No PA, only found noise :(")
+        %disp("No PA, only found noise :(")
         return
     end
 
@@ -108,7 +108,7 @@ function audioTimerFcn(recObj, event, handles)
     catch ME
 
         if ME.identifier == "MATLAB:badsubscript"
-            disp("Tried to extract data but message is not here yet")
+            %disp("Tried to extract data but message is not here yet")
             return
         end
 
@@ -152,6 +152,6 @@ function audioTimerFcn(recObj, event, handles)
 
     t_end = posixtime(datetime);
     delta = (t_end - t_start) * 1000;
-    disp("Data done! Message processing took " + delta + " milliseconds")
+    disp("Data done! Message processing took " + delta + " milliseconds. Peak PA was " + max_correlation)
     recObj.UserData.receive_complete = 1;
 end
