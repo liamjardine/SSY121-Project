@@ -133,13 +133,13 @@ function audioTimerFcn(recObj, event, handles)
     recObj.UserData.const = MF_sampled_rotated / max(abs(MF_sampled_rotated));
 
     % Step 3: provide the matched filter output for the eye diagram (Note here no match filter is used. You should do that)
-    MF_ind_low = max_index;
-    MF_ind_high = max_index + Q * N_symbols;
-    MF_to_eye = MF_output(1, MF_ind_low:MF_ind_high);
-
+    
     best_Q_divisor = recObj.UserData.best_Q_divisor;    % Downsample Q for faster view of eyediagram
-    recObj.UserData.eyed.r = MF_to_eye(1,1:best_Q_divisor:end);
+    MF_to_eye = MF_output(data_indices(1):best_Q_divisor:data_indices(end)) .* exp(-1i * (phase_shift / 180) * pi);
+
+    recObj.UserData.eyed.r = MF_to_eye;
     recObj.UserData.eyed.fsfd = Q/best_Q_divisor;
+
 
     % Step 4: Compute the PSD and save it.
     % !!!! NOTE !!!! the PSD should be computed on the BASE BAND signal BEFORE matched filtering
