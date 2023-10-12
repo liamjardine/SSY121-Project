@@ -1,10 +1,10 @@
 % RECEIVER
 function [audio_recorder] = receiver(f_carrier)
     fs = 28000;     % Goal sampling frequency
-    R_symb = 200;   % Symbol rate
+    R_symb = 170;   % Symbol rate
     Q = floor(fs / R_symb);     % Samples per symbol
     fs = R_symb * Q;    % Decided sampling frequency, everything is int
-    callback_interval = 0.25;   % how often the function should be called in seconds
+    callback_interval = 0.15;   % how often the function should be called in seconds
     min_eye_res = 40;   % Minimum Q to display in eye diagram. Makes GUI somewhat faster
     
 
@@ -54,7 +54,7 @@ function audioTimerFcn(recObj, event, handles)
     span = 6;           % Number of T_s to keep of symbol
     PA_thresh = 1;      % Threshold for when to preamble is above noise
     msg_to_keep = 2;    % Number of messages to keep in buffer
-    encrypt = false;    % Do extra encryption
+    encrypt = true;    % Do extra encryption
     %%%%% Variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     R_symb = recObj.UserData.R_symb;    % Symbol rate [symb/s]

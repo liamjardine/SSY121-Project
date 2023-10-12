@@ -1,10 +1,10 @@
 function pulse_train = transmitter(pack, fc)
 
     fs = 26000; %sampling frequency
-    R_symb = 200; % Symbol rate
+    R_symb = 170; % Symbol rate
     Q = floor(fs / R_symb); %Q=fsfd, samples per symbol
     fs = Q * R_symb;
-    encrypt = false;    % Add extra encryption
+    encrypt = true;    % Add extra encryption
 
     roll_off = 0.35;
     span = 6;
@@ -20,7 +20,7 @@ function pulse_train = transmitter(pack, fc)
     bpsymb = log2(M); % Number of bits per symbol % Symbol rate [symb/s]
 
     preamble = zadoffChuSeq(859,13)';
-
+    pack = pack';
     if encrypt
         pack = cipher(pack);
     end
