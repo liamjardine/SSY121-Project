@@ -4,6 +4,7 @@ function pulse_train = transmitter(pack, fc)
     R_symb = 200; % Symbol rate
     Q = floor(fs / R_symb); %Q=fsfd, samples per symbol
     fs = Q * R_symb;
+    encrypt = false;    % Add extra encryption
 
     roll_off = 0.35;
     span = 6;
@@ -19,6 +20,10 @@ function pulse_train = transmitter(pack, fc)
     bpsymb = log2(M); % Number of bits per symbol % Symbol rate [symb/s]
 
     preamble = zadoffChuSeq(859,13)';
+
+    if encrypt
+        pack = cipher(pack);
+    end
 
     grouped_bits = buffer(pack, bpsymb)'; % Group bits into bits per symbol
     bits_as_symbols = bi2de(grouped_bits, 'left-msb')' + 1; % Bits to symbol index 01=(2^0+2^1)=3(+1 constallation)

@@ -6,6 +6,7 @@ function [audio_recorder] = receiver(f_carrier)
     fs = R_symb * Q;    % Decided sampling frequency, everything is int
     callback_interval = 0.25;   % how often the function should be called in seconds
     min_eye_res = 40;   % Minimum Q to display in eye diagram. Makes GUI somewhat faster
+    
 
 
     assert(fs / 2 > f_carrier, "Too low sampling frequency to abide Nyquist.")
@@ -53,6 +54,7 @@ function audioTimerFcn(recObj, event, handles)
     span = 6;           % Number of T_s to keep of symbol
     PA_thresh = 1;      % Threshold for when to preamble is above noise
     msg_to_keep = 2;    % Number of messages to keep in buffer
+    encrypt = false;    % Do extra encryption
     %%%%% Variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     R_symb = recObj.UserData.R_symb;    % Symbol rate [symb/s]
@@ -80,7 +82,7 @@ function audioTimerFcn(recObj, event, handles)
     end
 
     rec_data_downConv = rec_data .* exp(1i * 2 * pi * f_carrier .* (0:length(rec_data) - 1) * Tsample);
-    rec_data_lowpass = lowpass(rec_data_downConv, f_carrier, f_sample);     % Trim LPF if we have noise problems
+    rec_data_lowpass = lowpass(rec_data_downConv, 750, f_sample);     % Trim LPF if we have noise problems
 
     preamble_upsample = upsample(preamble, Q);
     [pulse, ~] = rtrcpuls(roll_off, T_symb, f_sample, span);
@@ -116,7 +118,10 @@ function audioTimerFcn(recObj, event, handles)
 
     bits = quad_to_bits(quadrant_number, :);
     bits = reshape(bits', 1, []);
-
+    
+    if encrypt
+        bits = cipher(bits);
+    end
 
 
     %%%%% GUI %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
