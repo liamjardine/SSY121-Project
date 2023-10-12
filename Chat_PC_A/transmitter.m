@@ -35,7 +35,7 @@ function pulse_train = transmitter(pack, fc)
     
 
     [pulse, t] = rtrcpuls(roll_off, 1 / R_symb, fs, span);
-    pulse_train = conv(pulse, x_upsample);
+    pulse_train = fftconv(pulse, x_upsample);
 
 
     tx_signal = pulse_train .* exp(-1i * 2* pi * fc * (0:1:length(pulse_train) - 1) * Tsamp); %carrier
